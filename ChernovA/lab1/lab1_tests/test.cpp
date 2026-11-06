@@ -1,7 +1,8 @@
 #include "pch.h"
-#include "../../includes/Lab1/tbitfield.h"
-#include "../../includes/Lab1/tset.h"
+#include "../../../includes/Lab1/tbitfield.h"
+#include "../../../includes/Lab1/tset.h"
 #include <sstream> //для тестов input/out
+#include <stdexcept> //для проверки выхода за границу (выбрасываем исключения)
 
 //Тесты для tbitfield
 
@@ -385,4 +386,38 @@ TEST(TSetOperations, complement) {
 	EXPECT_EQ(c.IsMember(1), 1);
 	EXPECT_EQ(c.IsMember(3), 1);
 	EXPECT_EQ(c.IsMember(7), 1);
+}
+
+//тесты на краевые случая + исключения
+
+TEST(TSetExceptions, insert_out_of_bounds) {
+	TSet s(8);
+	EXPECT_THROW(s.InsElem(100), std::out_of_range);
+	EXPECT_THROW(s.InsElem(8), std::out_of_range);
+	EXPECT_THROW(s.InsElem(-1), std::out_of_range);
+}
+
+TEST(TSetExceptions, delete_out_of_bounds) {
+	TSet s(8);
+	EXPECT_THROW(s.DelElem(100), std::out_of_range);
+	EXPECT_THROW(s.DelElem(-5), std::out_of_range);
+}
+
+TEST(TSetExceptions, is_member_out_of_bounds) {
+	TSet s(8);
+	EXPECT_THROW(s.IsMember(50), std::out_of_range);
+}
+
+TEST(TSetExceptions, compare_different_sizes) {
+	TSet s1(8);
+	TSet s2(16);
+	EXPECT_THROW(s1 == s2, std::invalid_argument);
+	EXPECT_THROW(s1 != s2, std::invalid_argument);
+}
+
+TEST(TSetExceptions, union_different_sizes) {
+	TSet s1(8);
+	TSet s2(16);
+	EXPECT_THROW(s1 + s2, std::invalid_argument);
+	EXPECT_THROW(s1 * s2, std::invalid_argument);
 }

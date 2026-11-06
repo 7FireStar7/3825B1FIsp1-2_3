@@ -1,5 +1,8 @@
-#include "../../includes/Lab1/tset.h"
+#include "../../../includes/Lab1/tset.h"
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <stdexcept>
 
 TSet::TSet(int mp) : BitField(mp) {
     MaxPower = mp;
@@ -23,23 +26,38 @@ int TSet::GetMaxPower(void) const {
 }     // максимальная мощность множества
 
 void TSet::InsElem(const int Elem) {
+    if (Elem < 0 || Elem >= MaxPower) {
+        throw std::out_of_range("Element is out of universe bounds");
+    }
     BitField.SetBit(Elem);
 }       // включить элемент в множество
 
 void TSet::DelElem(const int Elem) {
+    if (Elem < 0 || Elem >= MaxPower) {
+        throw std::out_of_range("Element is out of universe bounds");
+    }
     BitField.ClrBit(Elem);
-}       // удалить элемент из множества
+}      // удалить элемент из множества
 
 int TSet::IsMember(const int Elem) const {
+    if (Elem < 0 || Elem >= MaxPower) {
+        throw std::out_of_range("Element is out of universe bounds");
+    }
     return BitField.GetBit(Elem);
 } // проверить наличие элемента в множестве
 
     // теоретико-множественные операции
 int TSet::operator== (const TSet& s) const {
+    if (MaxPower != s.MaxPower) {
+        throw std::invalid_argument("Cannot compare sets with different MaxPower");
+    }
     return BitField == s.BitField;
 } // сравнение
 
 int TSet::operator!= (const TSet& s) const {
+    if (MaxPower != s.MaxPower) {
+        throw std::invalid_argument("Cannot compare sets with different MaxPower");
+    }
     if (*this == s) {
         return 0;
     }
@@ -56,6 +74,9 @@ TSet& TSet::operator=(const TSet& s) {
 }  // присваивание
 
 TSet TSet::operator+ (const int Elem) {
+    if (Elem < 0 || Elem >= MaxPower) {
+        throw std::out_of_range("Element is out of universe bounds");
+    }
     TSet result(*this);
     result.InsElem(Elem);
     return result;
@@ -63,6 +84,9 @@ TSet TSet::operator+ (const int Elem) {
   // элемент должен быть из того же универса
 
 TSet TSet::operator- (const int Elem) {
+    if (Elem < 0 || Elem >= MaxPower) {
+        throw std::out_of_range("Element is out of universe bounds");
+    }
     TSet result(*this);
     result.DelElem(Elem);
     return result;
@@ -70,11 +94,17 @@ TSet TSet::operator- (const int Elem) {
   // элемент должен быть из того же универса
 
 TSet TSet::operator+ (const TSet& s) {
+    if (MaxPower != s.MaxPower) {
+        throw std::invalid_argument("Cannot unite sets with different MaxPower");
+    }
     TBitField result_bf = BitField | s.BitField;
     return TSet(result_bf);
-}  // объединение
+} // объединение
 
 TSet TSet::operator* (const TSet& s) {
+    if (MaxPower != s.MaxPower) {
+        throw std::invalid_argument("Cannot intersect sets with different MaxPower");
+    }
     TBitField result_bf = BitField & s.BitField;
     return TSet(result_bf);
 }  // пересечение
@@ -84,12 +114,32 @@ TSet TSet::operator~ (void) {
     return TSet(result_bf);
 }           // дополнение
 
-std::istream& operator>>(std::istream& istr, TSet& bf) {
-    istr >> bf.BitField;
+std::istream& operator>>(std::istream& istr, TSet& s) {
+    //читаем всю строку целиком чтобы обработать числа введенные через пробел
+    std::string line;
+    std::getline(istr, line);
+    //загружаем строку в поток для удобного чтения чисел
+    std::stringstream ss(line);
+    int val;
+    //пока получается считать число — добавляем его в множество
+    while (ss >> val) {
+        s.InsElem(val); //если вне диапазона, сработает искл
+    }
     return istr;
 }
 
-std::ostream& operator<<(std::ostream& ostr, const TSet& bf) {
-    ostr << bf.BitField;
+std::ostream& operator<<(std::ostream& ostr, const TSet& s) {
+    ostr << "{";
+    bool first = true;
+    for (int i = 0; i < s.MaxPower; ++i) {
+        if (s.IsMember(i)) {
+            if (!first) {
+                ostr << ", ";
+            }
+            ostr << i;
+            first = false;
+        }
+    }
+    ostr << "}";
     return ostr;
 }

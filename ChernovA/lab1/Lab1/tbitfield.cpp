@@ -1,4 +1,4 @@
-#include "../../includes/Lab1/tbitfield.h"
+#include "../../../includes/Lab1/tbitfield.h"
 #include <iostream>
 
 // методы реализации
