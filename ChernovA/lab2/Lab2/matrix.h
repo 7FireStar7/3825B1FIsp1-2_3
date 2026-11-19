@@ -1,5 +1,5 @@
 #pragma once
-#include "utmatrix.h"
+#include "../../../includes/Lab2/utmatrix.h"
 #include <stdexcept> //throw catch 
 
 template <class ValType>
@@ -7,21 +7,22 @@ TVector<ValType>::TVector(int s, int si) {
     if (s <= 0 || s > MAX_VECTOR_SIZE) {
         throw std::invalid_argument("TVector: invalid size");
     }
-    if (si < 0) {
-        throw std::invalid_argument("TVector: negative start index");
+    if (si < 0 || si >= s) {
+        throw std::invalid_argument("TVector: invalid start index");
     }
 
     Size = s;
     StartIndex = si;
-    pVector = new ValType[Size]();
+    pVector = new ValType[Size - StartIndex]();
 }
 
 template <class ValType>
 TVector<ValType>::TVector(const TVector<ValType>& v) {
     Size = v.Size;
     StartIndex = v.StartIndex;
-    pVector = new ValType[Size];
-    for (int i = 0; i < Size; i++) {
+    int count = Size - StartIndex;
+    pVector = new ValType[count];
+    for (int i = 0; i < count; i++) {
         pVector[i] = v.pVector[i];
     }
 }
@@ -33,7 +34,7 @@ TVector<ValType>::~TVector() {
 
 template <class ValType>
 ValType& TVector<ValType>::operator[](int pos) {
-    if (pos < StartIndex || pos >= StartIndex + Size) {
+    if (pos < StartIndex || pos >= Size) {
         throw std::out_of_range("TVector: index out of range");
     }
     return pVector[pos - StartIndex];
@@ -41,7 +42,7 @@ ValType& TVector<ValType>::operator[](int pos) {
 
 template <class ValType>
 const ValType& TVector<ValType>::operator[](int pos) const {
-    if (pos < StartIndex || pos >= StartIndex + Size) {
+    if (pos < StartIndex || pos >= Size) {
         throw std::out_of_range("TVector: index out of range");
     }
     return pVector[pos - StartIndex];
@@ -50,13 +51,15 @@ const ValType& TVector<ValType>::operator[](int pos) const {
 template <class ValType>
 TVector<ValType>& TVector<ValType>::operator=(const TVector<ValType>& v) {
     if (this != &v) {
-        if (Size != v.Size) {
+        int new_count = v.Size - v.StartIndex;
+        if (Size - StartIndex != new_count) {
+            ValType* new_vector = new ValType[new_count]; //сначала выделяем, потом удаляем старое
             delete[] pVector;
-            pVector = new ValType[v.Size];
-            Size = v.Size;
+            pVector = new_vector;
         }
+        Size = v.Size;
         StartIndex = v.StartIndex;
-        for (int i = 0; i < Size; i++) {
+        for (int i = 0; i < new_count; i++) {
             pVector[i] = v.pVector[i];
         }
     }
@@ -68,7 +71,7 @@ bool TVector<ValType>::operator==(const TVector<ValType>& v) const {
     if (Size != v.Size || StartIndex != v.StartIndex) {
         return false;
     }
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         if (pVector[i] != v.pVector[i]) {
             return false;
         }
@@ -84,7 +87,7 @@ bool TVector<ValType>::operator!=(const TVector<ValType>& v) const {
 template <class ValType>
 TVector<ValType> TVector<ValType>::operator+(const ValType& val) const {
     TVector<ValType> result(Size, StartIndex);
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result.pVector[i] = pVector[i] + val;
     }
     return result;
@@ -93,7 +96,7 @@ TVector<ValType> TVector<ValType>::operator+(const ValType& val) const {
 template <class ValType>
 TVector<ValType> TVector<ValType>::operator-(const ValType& val) const {
     TVector<ValType> result(Size, StartIndex);
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result.pVector[i] = pVector[i] - val;
     }
     return result;
@@ -102,7 +105,7 @@ TVector<ValType> TVector<ValType>::operator-(const ValType& val) const {
 template <class ValType>
 TVector<ValType> TVector<ValType>::operator*(const ValType& val) const {
     TVector<ValType> result(Size, StartIndex);
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result.pVector[i] = pVector[i] * val;
     }
     return result;
@@ -114,7 +117,7 @@ TVector<ValType> TVector<ValType>::operator+(const TVector<ValType>& v) const {
         throw std::invalid_argument("TVector: vectors have different size or start index");
     }
     TVector<ValType> result(Size, StartIndex);
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result.pVector[i] = pVector[i] + v.pVector[i];
     }
     return result;
@@ -126,7 +129,7 @@ TVector<ValType> TVector<ValType>::operator-(const TVector<ValType>& v) const {
         throw std::invalid_argument("TVector: vectors have different size or start index");
     }
     TVector<ValType> result(Size, StartIndex);
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result.pVector[i] = pVector[i] - v.pVector[i];
     }
     return result;
@@ -138,7 +141,7 @@ ValType TVector<ValType>::operator*(const TVector<ValType>& v) const {
         throw std::invalid_argument("TVector: vectors have different size or start index");
     }
     ValType result = ValType();
-    for (int i = 0; i < Size; i++) {
+    for (int i = 0; i < Size - StartIndex; i++) {
         result += pVector[i] * v.pVector[i];
     }
     return result;
@@ -157,7 +160,7 @@ inline int check_matrix_size(int size) { //вспомогательная фун
 template <class ValType>
 TMatrix<ValType>::TMatrix(int s) : TVector<TVector<ValType>>(check_matrix_size(s)) {
     for (int i = 0; i < this->Size; i++) {
-        this->pVector[i] = TVector<ValType>(this->Size - i, i);
+        this->pVector[i] = TVector<ValType>(this->Size, i); //строка i: полная длина n, первые i элементов - нули
     }
 }
 

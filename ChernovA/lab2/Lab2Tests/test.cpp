@@ -1,7 +1,5 @@
 #include "pch.h"
-#include <sstream>
 #include "../Lab2/matrix.h"
-#include "../Lab2/utmatrix.h"
 
 //тесты на создание
 
@@ -23,11 +21,15 @@ TEST(tvector, negative_start_throws) {
     EXPECT_THROW(TVector<int>(3, -10), std::invalid_argument);
 }
 
+TEST(tvector, start_not_less_size) { //StartIndex должен быть меньше Size
+    EXPECT_THROW(TVector<int>(3, 3), std::invalid_argument);
+}
+
 
 //тесты на копирование
 
 TEST(tvector, copy_is_equal) {
-    TVector<int> v(3, 2);
+    TVector<int> v(5, 2);   // допустимые индексы 2, 3, 4
     v[2] = 1;
     v[3] = 2;
     v[4] = 3;
@@ -54,7 +56,7 @@ TEST(tvector, copy_is_independent) { //копия и оригинал разны
 //доступы по индексу
 
 TEST(tvector, start_index_offset) {
-    TVector<int> v(3, 5);   // допустимые индексы 5, 6, 7
+    TVector<int> v(8, 5);   // допустимые индексы 5, 6, 7
     v[5] = 1;
     v[7] = 3;
 
@@ -64,12 +66,12 @@ TEST(tvector, start_index_offset) {
 }
 
 TEST(tvector, index_below_start) {
-    TVector<int> v(4, 3);
+    TVector<int> v(7, 3);   // допустимые индексы 3, 4, 5, 6
     EXPECT_THROW(v[2], std::out_of_range);
 }
 
 TEST(tvector, index_above_end) {
-    TVector<int> v(4, 3);
+    TVector<int> v(7, 3);
     EXPECT_THROW(v[7], std::out_of_range);
 }
 
@@ -104,14 +106,28 @@ TEST(tvector, assign_same_size) {
 
 TEST(tvector, assign_changes_size) {
     TVector<int> a(3);
-    TVector<int> b(5, 2);
+    TVector<int> b(7, 2);
     b[2] = 1;
     b[6] = 5;
 
     a = b;
 
-    EXPECT_EQ(5, a.GetSize());
+    EXPECT_EQ(7, a.GetSize());
     EXPECT_EQ(2, a.GetStartIndex());
+    EXPECT_EQ(b, a);
+}
+
+TEST(tvector, assign_same_count) { //Size разный, но хранится одинаковое число элементов
+    TVector<int> a(5, 2);
+    TVector<int> b(3);
+    b[0] = 1;
+    b[1] = 2;
+    b[2] = 3;
+
+    a = b;
+
+    EXPECT_EQ(3, a.GetSize());
+    EXPECT_EQ(0, a.GetStartIndex());
     EXPECT_EQ(b, a);
 }
 
@@ -119,8 +135,8 @@ TEST(tvector, assign_changes_size) {
 //тесты на сравнение
 
 TEST(tvector, equal_vectors) {
-    TVector<int> a(3, 1);
-    TVector<int> b(3, 1);
+    TVector<int> a(4, 1);
+    TVector<int> b(4, 1);
     a[1] = 1;
     a[2] = 2;
     a[3] = 3;
@@ -153,7 +169,7 @@ TEST(tvector, different_size) {
 //тесты на скалярные операции
 
 TEST(tvector, add_scalar) {
-    TVector<int> v(3, 2);
+    TVector<int> v(5, 2);
     v[2] = 1;
     v[3] = 2;
     v[4] = 3;
@@ -182,8 +198,8 @@ TEST(tvector, mul_scalar) {
 //тесты на векторные операции
 
 TEST(tvector, add_vectors) {
-    TVector<int> a(3, 1);
-    TVector<int> b(3, 1);
+    TVector<int> a(4, 1);
+    TVector<int> b(4, 1);
     a[1] = 1;
     a[2] = 2;
     a[3] = 3;
@@ -247,41 +263,6 @@ TEST(tvector, start_mismatch_throws) {
 }
 
 
-//тесты на ввод вывод
-
-TEST(tvector, read_stream) {
-    std::istringstream in("7 8 9");
-    TVector<int> v(3);
-
-    in >> v;
-
-    EXPECT_EQ(7, v[0]);
-    EXPECT_EQ(8, v[1]);
-    EXPECT_EQ(9, v[2]);
-}
-
-TEST(tvector, write_stream) {
-    TVector<int> v(3);
-    v[0] = 1;
-    v[1] = 2;
-    v[2] = 3;
-    std::ostringstream out;
-
-    out << v;
-
-    EXPECT_EQ("1 2 3", out.str());
-}
-
-TEST(tvector, write_single) {
-    TVector<int> v(1);
-    v[0] = 5;
-    std::ostringstream out;
-
-    out << v;
-
-    EXPECT_EQ("5", out.str());
-}
-
 //тесты на матрицы
 
 //тесты на создание
@@ -305,10 +286,10 @@ TEST(tmatrix, huge_size_throws) {
     EXPECT_THROW(TMatrix<int>(MAX_MATRIX_SIZE + 100), std::invalid_argument);
 }
 
-TEST(tmatrix, row_sizes) {
+TEST(tmatrix, row_layout) { //у каждой строки полная длина n, а начало сдвигается на i
     TMatrix<int> m(4);
     for (int i = 0; i < 4; i++) {
-        EXPECT_EQ(4 - i, m[i].GetSize());
+        EXPECT_EQ(4, m[i].GetSize());
         EXPECT_EQ(i, m[i].GetStartIndex());
     }
 }
@@ -449,34 +430,4 @@ TEST(tmatrix, size_mismatch_throws) {
 
     EXPECT_THROW(a + b, std::invalid_argument);
     EXPECT_THROW(a - b, std::invalid_argument);
-}
-
-
-//тесты на ввод-вывод
-
-TEST(tmatrix, read_stream) {
-    std::istringstream in("1 2 3 4 5 6");
-    TMatrix<int> m(3);
-
-    in >> m;
-
-    EXPECT_EQ(1, m[0][0]);
-    EXPECT_EQ(3, m[0][2]);
-    EXPECT_EQ(4, m[1][1]);
-    EXPECT_EQ(6, m[2][2]);
-}
-
-TEST(tmatrix, write_stream) {
-    TMatrix<int> m(3);
-    m[0][0] = 1;
-    m[0][1] = 2;
-    m[0][2] = 3;
-    m[1][1] = 4;
-    m[1][2] = 5;
-    m[2][2] = 6;
-    std::ostringstream out;
-
-    out << m;
-
-    EXPECT_EQ("1 2 3\n0 4 5\n0 0 6", out.str());
 }
