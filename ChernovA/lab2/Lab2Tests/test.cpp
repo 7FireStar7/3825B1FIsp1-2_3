@@ -181,6 +181,19 @@ TEST(tvector, add_scalar) {
     EXPECT_EQ(13, result[4]);
 }
 
+TEST(tvector, sub_scalar) {
+    TVector<int> v(3);
+    v[0] = 1;
+    v[1] = 2;
+    v[2] = 3;
+
+    TVector<int> result = v - 1;
+
+    EXPECT_EQ(0, result[0]);
+    EXPECT_EQ(1, result[1]);
+    EXPECT_EQ(2, result[2]);
+}
+
 TEST(tvector, mul_scalar) {
     TVector<int> v(3);
     v[0] = 1;
@@ -262,6 +275,9 @@ TEST(tvector, start_mismatch_throws) {
     EXPECT_THROW(a * b, std::invalid_argument);
 }
 
+TEST(tvector, negative_size_throws) {
+    EXPECT_THROW(TVector<int>(-5), std::invalid_argument);
+}
 
 //тесты на матрицы
 
@@ -284,6 +300,10 @@ TEST(tmatrix, zero_size_throws) {
 
 TEST(tmatrix, huge_size_throws) {
     EXPECT_THROW(TMatrix<int>(MAX_MATRIX_SIZE + 100), std::invalid_argument);
+}
+
+TEST(tmatrix, negative_size_throws) {
+    EXPECT_THROW(TMatrix<int>(-30), std::invalid_argument);
 }
 
 TEST(tmatrix, row_layout) { //у каждой строки полная длина n, а начало сдвигается на i
